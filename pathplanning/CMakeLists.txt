@@ -6,9 +6,11 @@ add_definitions(-std=c++11)
 
 set(CXX_FLAGS "-Wall")
 set(CMAKE_CXX_FLAGS, "${CXX_FLAGS}")
-
+set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+add_library(Catch INTERFACE)
+target_include_directories(Catch INTERFACE ${CATCH_INCLUDE_DIR})
 set(sources src/main.cpp src/helper.h)
-
+set(TEST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/catch_tests)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin") 
 
@@ -22,5 +24,6 @@ endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 
 add_executable(path_planning ${sources})
-
+add_executable(tests ${TEST_SOURCES})
+target_link_libraries(tests Catch)
 target_link_libraries(path_planning z ssl uv uWS)
