@@ -138,4 +138,33 @@ std::vector<double> getXY(double s, double d, const std::vector<double> &maps_s,
     return {x,y};
 
 }
+
+
+enum Lane {
+        LEFT, CENTRE, RIGHT
+    };
+struct angleInRadians;
+struct angleInDegrees{
+    double angle;
+    explicit angleInDegrees(double x):angle{x}{}
+    angleInDegrees(const angleInRadians& x){
+        angle=rad2deg(x.angle);
+    }
+};
+struct angleInRadians{
+    double angle;
+    explicit angleInRadians(double x):angle{x}{}
+    angleInRadians(const angleInDegrees& x){
+        angle = deg2rad(x.angle);
+    }
+};
+double lane2d(Lane l){
+        return 2+l*4;
+    }
+double sindeg(angleInDegrees a){
+
+}
+double cosdeg(angleInDegrees a){
+
+}
 #endif //PATH_PLANNING_HELPER_H
