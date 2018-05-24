@@ -9,8 +9,8 @@ set(CMAKE_CXX_FLAGS, "${CXX_FLAGS}")
 set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 add_library(Catch INTERFACE)
 target_include_directories(Catch INTERFACE ${CATCH_INCLUDE_DIR})
-set(sources src/main.cpp src/helper.h src/spline.h)
-set(TEST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/catch_tests src/spline.h)
+set(sources src/main.cpp src/helper.h src/spline.h src/helper.cpp)
+set(TEST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/catch_tests src/spline.h src/helper.cpp)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin") 
 
