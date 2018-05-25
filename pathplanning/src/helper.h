@@ -4,12 +4,12 @@
 
 #ifndef PATH_PLANNING_HELPER_H
 #define PATH_PLANNING_HELPER_H
-#include <math.h>
+
 #include <vector>
 #include "Eigen-3.3/Eigen/Core"
-#include "Eigen-3.3/Eigen/QR"
 double deg2rad(double );
 double rad2deg(double );
+double distance(double x1, double y1, double x2, double y2);
 constexpr double pi(){ return M_PI; }
 int ClosestWaypoint(double x, double y, const std::vector<double> &maps_x, const std::vector<double> &maps_y);
 int NextWaypoint(double x, double y, double theta, const std::vector<double> &maps_x, const std::vector<double> &maps_y);
@@ -18,17 +18,39 @@ std::vector<double> getXY(double s, double d, const std::vector<double> &maps_s,
 enum Lane {
         LEFT, CENTRE, RIGHT
     };
-struct angleInRadians;
-struct angleInDegrees{
+struct AngleInRadians;
+struct AngleInDegrees{
     double angle;
-    explicit angleInDegrees(double x):angle{x}{}
-    angleInDegrees(const angleInRadians& x);
+    explicit AngleInDegrees(double x):angle{x}{}
+    AngleInDegrees(const AngleInRadians& x);
 };
-struct angleInRadians{
+struct AngleInRadians{
     double angle;
-    explicit angleInRadians(double x):angle{x}{}
-    angleInRadians(const angleInDegrees& x);
+    explicit AngleInRadians(double x):angle{x}{}
+    AngleInRadians(const AngleInDegrees& x);
 };
 double lane2d(Lane l);
+
+struct FrenetPoint{
+    double s;
+    double d;
+    explicit FrenetPoint(double,double);
+};
+
+struct CartesianPoint{
+    double x;
+    double y;
+    explicit CartesianPoint(double, double);
+};
+
+struct CarStateCartesian{
+    CartesianPoint car_position;
+    AngleInRadians car_angle;
+    double car_speed_in_mps;
+    CarStateCartesian(double x,double y, AngleInRadians theta,double speed);
+};
+
+FrenetPoint getFrenet(CartesianPoint p, AngleInRadians theta, const std::vector<double> &maps_x, const std::vector<double> &maps_y);
+CartesianPoint getXY(FrenetPoint p,const std::vector<double> &maps_s, const std::vector<double> &maps_x, const std::vector<double> &maps_y);
 
 #endif //PATH_PLANNING_HELPER_H

@@ -5,7 +5,6 @@
 #include <iostream>
 #include <thread>
 #include <vector>
-#include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
 #include "json.hpp"
 #include "helper.h"
@@ -99,16 +98,16 @@ int main() {
           	double car_y = j[1]["y"];
           	double car_s = j[1]["s"];
           	double car_d = j[1]["d"];
-          	double car_yaw = j[1]["yaw"];
+          	double car_yaw_dont_use = j[1]["yaw"];
           	double car_speed = j[1]["speed"];
-
+            AngleInRadians car_yaw_rad=AngleInRadians(deg2rad(car_yaw_dont_use));
           	// Previous path data given to the Planner
           	auto previous_path_x = j[1]["previous_path_x"];
           	auto previous_path_y = j[1]["previous_path_y"];
           	// Previous path's end s and d values 
           	double end_path_s = j[1]["end_path_s"];
           	double end_path_d = j[1]["end_path_d"];
-
+            CarStateCartesian car_state(car_x,car_y,car_yaw_rad,car_speed);//assumes that mps is the unit of car_speed
           	// Sensor Fusion Data, a list of all other cars on the same side of the road.
           	auto sensor_fusion = j[1]["sensor_fusion"];
 
@@ -128,6 +127,7 @@ int main() {
                 next_x_vals.push_back(xy[0]);
                 next_y_vals.push_back(xy[1]);
             }
+
           	msgJson["next_x"] = next_x_vals;
           	msgJson["next_y"] = next_y_vals;
 

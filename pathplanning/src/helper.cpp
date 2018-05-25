@@ -3,7 +3,9 @@
 //
 
 #include "helper.h"
-
+#include <math.h>
+#include "Eigen-3.3/Eigen/Core"
+#include "Eigen-3.3/Eigen/QR"
 double deg2rad(double x) { return x * pi() / 180; }
 double rad2deg(double x) { return x * 180 / pi(); }
 double distance(double x1, double y1, double x2, double y2)
@@ -138,22 +140,46 @@ double lane2d(Lane l){
     return 2+l*4;
 }
 
-angleInDegrees::angleInDegrees(const angleInRadians &x) {
+AngleInDegrees::AngleInDegrees(const AngleInRadians &x) {
     angle=rad2deg(x.angle);
 }
-angleInRadians::angleInRadians(const angleInDegrees &x) {
+AngleInRadians::AngleInRadians(const AngleInDegrees &x) {
     angle = deg2rad(x.angle);
 }
-double sindeg(angleInDegrees a){
-    return sin(angleInRadians(a).angle);
+double sindeg(AngleInDegrees a){
+    return sin(AngleInRadians(a).angle);
 }
-double cosdeg(angleInDegrees a){
-    return cos(angleInRadians(a).angle);
+double cosdeg(AngleInDegrees a){
+    return cos(AngleInRadians(a).angle);
 }
 
-double sinrad(angleInRadians a){
+double sinrad(AngleInRadians a){
     return sin(a.angle);
 }
-double cosrad(angleInRadians a){
+double cosrad(AngleInRadians a){
     return cos(a.angle);
+}
+
+FrenetPoint::FrenetPoint(double _s, double _d) {
+    this->s = s;
+    this->d = d;
+}
+
+CartesianPoint::CartesianPoint(double _x, double _y) {
+    x = _x;
+    y = _y;
+}
+
+CarStateCartesian::CarStateCartesian(double x, double y, AngleInRadians theta, double speed):car_position{CartesianPoint(x,y)},car_angle{theta} {
+    car_speed_in_mps = speed;
+}
+
+FrenetPoint getFrenet(CartesianPoint p , AngleInRadians theta, const std::vector<double> &maps_x, const std::vector<double> &maps_y){
+    auto temp = getFrenet(p.x,p.y,theta.angle,maps_x,maps_y);
+    return FrenetPoint(temp[0],temp[1]);
+}
+
+CartesianPoint getXY(FrenetPoint p, const std::vector<double> &maps_s, const std::vector<double> &maps_x,const std::vector<double> &maps_y){
+    auto temp = getXY(p.s,p.d,maps_s,maps_x,maps_y);
+    return CartesianPoint(temp[0],temp[1]);
 }
