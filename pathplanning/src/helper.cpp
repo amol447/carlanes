@@ -1,11 +1,14 @@
 //
 // Created by amol on 23/05/18.
 //
-
+#include <functional>
+#include <algorithm>
 #include "helper.h"
 #include <math.h>
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
+#include "spline.h"
+
 double deg2rad(double x) { return x * pi() / 180; }
 double rad2deg(double x) { return x * 180 / pi(); }
 double distance(double x1, double y1, double x2, double y2)
@@ -174,6 +177,11 @@ CarStateCartesian::CarStateCartesian(double x, double y, AngleInRadians theta, d
     car_speed_in_mps = speed;
 }
 
+CarStateCartesian::CarStateCartesian(const CarStateCartesian &x):car_angle {x.car_angle},{
+    car_position = x.car_position;
+    car_speed_in_mps = x.car_speed_in_mps;
+}
+
 FrenetPoint getFrenet(CartesianPoint p , AngleInRadians theta, const std::vector<double> &maps_x, const std::vector<double> &maps_y){
     auto temp = getFrenet(p.x,p.y,theta.angle,maps_x,maps_y);
     return FrenetPoint(temp[0],temp[1]);
@@ -182,4 +190,71 @@ FrenetPoint getFrenet(CartesianPoint p , AngleInRadians theta, const std::vector
 CartesianPoint getXY(FrenetPoint p, const std::vector<double> &maps_s, const std::vector<double> &maps_x,const std::vector<double> &maps_y){
     auto temp = getXY(p.s,p.d,maps_s,maps_x,maps_y);
     return CartesianPoint(temp[0],temp[1]);
+}
+
+CarStateFrenet::CarStateFrenet(double _s, double _d):s{_s},d{_d}{}
+
+CarStateCartesian moveForward(CarStateCartesian start_state, double time_in_sec){
+    CarStateCartesian result(start_state);
+    result.car_position.x = start_state.car_position.x + start_state.car_speed_in_mps*cosrad(start_state.car_angle)*time_in_sec;
+    result.car_position.y = start_state.car_position.y + start_state.car_speed_in_mps*sinrad(start_state.car_angle)*time_in_sec;
+    return result;
+}
+
+FrenetPoint add_to_s_set_d(const FrenetPoint& x, double s,double d){
+    return FrenetPoint(x.s+s,d);
+}
+FrenetPoint add_to_s(const FrenetPoint&x, double s){
+    return FrenetPoint(x.s+s,x.d);
+}
+
+AngleInRadians operator+(AngleInRadians x, AngleInRadians y){
+    return AngleInRadians(x.angle+y.angle);
+}
+AngleInRadians operator-(AngleInRadians x, AngleInRadians y){
+    return  AngleInRadians(x.angle-y.angle);
+}
+
+CartesianPoint rotation_translation(const CartesianPoint & point, const CartesianPoint& ref, const AngleInRadians& ref_angle){
+    CartesianPoint result(point);
+    double shift_x = point.x - ref.x;
+    double shift_y = point.y- ref.x;
+    result.x = shift_x*cosrad(AngleInRadians(0.0)-ref_angle) - shift_y*sinrad(AngleInRadians(0.0)-ref_angle);
+    result.y = shift_x*sinrad(AngleInRadians(0.0)-ref_angle) - shift_y*cosrad(AngleInRadians(0.0)-ref_angle);
+    return result;
+}
+
+std::vector<CartesianPoint> calcReferencePath(std::vector<double> previous_path_x, std::vector<double> previous_path_y,
+                                              CarStateCartesian car_state, FrenetPoint frenet_state,Lane desired_lane,
+                                              const std::vector<double> &maps_s, const std::vector<double> &maps_x,
+                                              const std::vector<double> &maps_y){
+    std::vector<CartesianPoint> spline_init_points;
+    CartesianPoint ref=car_state.car_position;
+    AngleInRadians ref_yaw = car_state.car_angle;
+    unsigned long n = previous_path_x.size();
+    if (previous_path_x.size() >= 2) {
+        ref = CartesianPoint(previous_path_x[n-1],previous_path_y[n-1])
+        spline_init_points.push_back(ref);
+        spline_init_points.emplace_back(CartesianPoint(previous_path_x[n-2],previous_path_y[n-2]));
+        ref_yaw = AngleInRadians(atan2(previous_path_y[n-1]-previous_path_y[n-2],previous_path_x[n-1]-previous_path_x[n-2]));
+    } else {
+        spline_init_points.push_back(car_state.car_position);
+        spline_init_points.push_back(moveForward(car_state, -0.02).car_position);
+    }
+    std::vector<CartesianPoint> next_wp(3);
+    double FORWARD_TIME=1.2;
+    double forward_s=std::max(30.0,FORWARD_TIME*car_state.car_speed_in_mps);
+    double desired_d = lane2d(desired_lane);
+    for(unsigned long i=0;i<3;i++){
+    next_wp[i] = getXY(add_to_s_set_d(frenet_state,forward_s*(i+1),desired_d),maps_s,maps_x, maps_y);
+    spline_init_points.push_back(next_wp[i]);
+    }
+    tk::spline s;
+    std::transform(spline_init_points.begin(),spline_init_points.end(),spline_init_points.begin(),[&ref,ref_yaw](CartesianPoint point){return rotation_translation(point,ref,ref_yaw); });
+    std::sort(spline_init_points.begin(),spline_init_points.end(),[](CartesianPoint x,CartesianPoint y){return (x.x<=y.x);});
+    std::vector<double> wp_x,wp_y;
+    std::transform(spline_init_points.begin(),spline_init_points.end(),std::back_inserter(wp_x),[](CartesianPoint x){return x.x;});
+    std::transform(spline_init_points.begin(),spline_init_points.end(),std::back_inserter(wp_y),[](CartesianPoint x){return x.y;});
+    s.set_points(wp_x,wp_y);
+
 }

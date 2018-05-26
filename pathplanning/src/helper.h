@@ -24,11 +24,14 @@ struct AngleInDegrees{
     explicit AngleInDegrees(double x):angle{x}{}
     AngleInDegrees(const AngleInRadians& x);
 };
+
 struct AngleInRadians{
     double angle;
     explicit AngleInRadians(double x):angle{x}{}
     AngleInRadians(const AngleInDegrees& x);
 };
+
+AngleInRadians operator+(AngleInRadians x, AngleInRadians y);
 double lane2d(Lane l);
 
 struct FrenetPoint{
@@ -43,14 +46,19 @@ struct CartesianPoint{
     explicit CartesianPoint(double, double);
 };
 
+
+
+
 struct CarStateCartesian{
     CartesianPoint car_position;
     AngleInRadians car_angle;
     double car_speed_in_mps;
     CarStateCartesian(double x,double y, AngleInRadians theta,double speed);
+    CarStateCartesian(const CarStateCartesian &x);
 };
 
 FrenetPoint getFrenet(CartesianPoint p, AngleInRadians theta, const std::vector<double> &maps_x, const std::vector<double> &maps_y);
 CartesianPoint getXY(FrenetPoint p,const std::vector<double> &maps_s, const std::vector<double> &maps_x, const std::vector<double> &maps_y);
-
+CarStateCartesian moveForward(CarStateCartesian start_state, double time_in_sec);
+std::vector<CartesianPoint> calcReferencePath(std::vector<double> , std::vector<double> , CarStateCartesian  , CarStateFrenet, Lane, const std::vector<double> &, const std::vector<double> &,const std::vector<double> &);
 #endif //PATH_PLANNING_HELPER_H

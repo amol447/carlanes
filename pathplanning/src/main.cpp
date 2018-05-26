@@ -107,8 +107,12 @@ int main() {
           	// Previous path's end s and d values 
           	double end_path_s = j[1]["end_path_s"];
           	double end_path_d = j[1]["end_path_d"];
-            CarStateCartesian car_state(car_x,car_y,car_yaw_rad,car_speed);//assumes that mps is the unit of car_speed
-          	// Sensor Fusion Data, a list of all other cars on the same side of the road.
+
+
+          	double car_speed_mps=car_speed*0.44704;
+            CarStateCartesian car_state(car_x,car_y,car_yaw_rad,car_speed_mps);
+          	FrenetPoint frenet_state(car_s,car_d);
+            // Sensor Fusion Data, a list of all other cars on the same side of the road.
           	auto sensor_fusion = j[1]["sensor_fusion"];
 
           	json msgJson;
