@@ -304,4 +304,69 @@ std::vector<CartesianPoint> calcPathSpline(const std::vector<double>& previous_p
 return result;
 
 }
+std::vector<CartesianPoint> calcFullPathSpline(const std::vector<double>& previous_path_x, const std::vector<double>& previous_path_y,
+                                           CarStateCartesian car_state, FrenetPoint frenet_state, const Lane desired_lane,const double target_speed,
+                                           const std::vector<double> &maps_s, const std::vector<double> &maps_x,
+                                           const std::vector<double> &maps_y){
+    const unsigned int desired_points = 50;
+    std::vector<CartesianPoint> spline_init_points;
+    CartesianPoint ref=car_state.car_position;
+    AngleInRadians ref_yaw = car_state.car_angle;
+    double ref_speed = 0.0;
+    const double max_acceleration = 10.0;
+    const double frame_rate = 0.02;
+    const unsigned int n = previous_path_x.size();
+    if (previous_path_x.size() >= 2) {
+        //ref = CartesianPoint(previous_path_x[n-1],previous_path_y[n-1]);
+        for(unsigned int i=0;i<n;i++){
+            spline_init_points.emplace_back(CartesianPoint(previous_path_x[i],previous_path_y[i]));
+        }
+        //ref_yaw = AngleInRadians(atan2(previous_path_y[n-1]-previous_path_y[n-2],previous_path_x[n-1]-previous_path_x[n-2]));
+        ref_speed = fabs(distance(previous_path_x[n-1],previous_path_y[n-1],previous_path_x[n-2],previous_path_y[n-2])/frame_rate);
+        ref_speed = std::max(ref_speed-max_acceleration*frame_rate,std::min(target_speed,ref_speed+ max_acceleration*frame_rate));
+        } else {
+        spline_init_points.push_back(car_state.car_position);
+        if(car_state.car_speed_in_mps>0){
+            spline_init_points.push_back(moveForward(car_state, -1*frame_rate).car_position);
+        }else{
+            CarStateCartesian new_state(car_state);
+            new_state.car_speed_in_mps = 0.2;
+            spline_init_points.push_back(moveForward(new_state,-1*frame_rate).car_position);
+        }
+        ref_speed = std::max(car_state.car_speed_in_mps-max_acceleration*frame_rate,std::min(car_state.car_speed_in_mps+max_acceleration*frame_rate,target_speed));
+    }
+    std::vector<CartesianPoint> next_wp(3);
+    const double FORWARD_TIME=1.2;
+    double forward_s=std::max(30.0,FORWARD_TIME*car_state.car_speed_in_mps);
+    double desired_d = lane2d(desired_lane);
+    for(unsigned long i=0;i<3;i++){
+    next_wp[i] = getXY(add_to_s_set_d(frenet_state,forward_s*(i+1),desired_d),maps_s,maps_x, maps_y);
+    spline_init_points.push_back(next_wp[i]);
+    }
+    tk::spline s;
+    std::transform(spline_init_points.begin(),spline_init_points.end(),spline_init_points.begin(),[&ref,ref_yaw](CartesianPoint point){return rotation_translation(point,ref,ref_yaw); });
+    std::sort(spline_init_points.begin(),spline_init_points.end(),[](CartesianPoint x,CartesianPoint y){return (x.x<=y.x);});
+    std::vector<double> wp_x,wp_y;
+    std::transform(spline_init_points.begin(),spline_init_points.end(),std::back_inserter(wp_x),[](CartesianPoint x){return x.x;});
+    std::transform(spline_init_points.begin(),spline_init_points.end(),std::back_inserter(wp_y),[](CartesianPoint x){return x.y;});
+    s.set_points(wp_x,wp_y);
+
+    //get points on spline that do not violate speed constraints
+    //it's ok to do this in transformed domain because the transformation doesn't scale, only translate and rotate
+    std::vector<CartesianPoint> result(desired_points);
+    double target_x = std::max(52.0,(FORWARD_TIME+1.8)*car_state.car_speed_in_mps);
+    double target_y = s(target_x);
+    double distance_to_end = distance(0.0,0.0,target_x,target_y);
+    int spline_total_points = (unsigned  int) ceil(distance_to_end/(frame_rate*ref_speed));
+    AngleInRadians angle_of_triangle = AngleInRadians(atan2(target_y,target_x));
+    double spline_x,spline_y;
+    for(unsigned int i=0;i <desired_points;i++){
+        spline_x=(i+1)*cosrad(angle_of_triangle)*distance_to_end/spline_total_points;
+        spline_y=s(spline_x);
+        CartesianPoint p(spline_x,spline_y);
+        result[i] = inverse_rotation_translation(p,ref,ref_yaw);
+    }
+return result;
+
+}
 

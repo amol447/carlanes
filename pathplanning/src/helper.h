@@ -66,4 +66,7 @@ CarStateCartesian moveForward(CarStateCartesian start_state, double time_in_sec)
 std::vector<CartesianPoint> calcPathSpline(const std::vector<double>&, const std::vector<double>&, CarStateCartesian, FrenetPoint,
                                            const Lane, const double,const std::vector<double> &, const std::vector<double> &,
                                            const std::vector<double> &);
+std::vector<CartesianPoint> calcFullPathSpline(const std::vector<double>&, const std::vector<double>&, CarStateCartesian, FrenetPoint,
+                                           const Lane, const double,const std::vector<double> &, const std::vector<double> &,
+                                           const std::vector<double> &);
 #endif //PATH_PLANNING_HELPER_H

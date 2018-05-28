@@ -119,7 +119,7 @@ int main() {
 
           	vector<double> next_x_vals;
           	vector<double> next_y_vals;
-            double target_vel=49.5/2.24;
+            double target_vel=49/2.24;
 
           	// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
             Lane lane = CENTRE;
