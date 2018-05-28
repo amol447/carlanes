@@ -44,6 +44,7 @@ struct CartesianPoint{
     double x;
     double y;
     explicit CartesianPoint(double, double);
+    CartesianPoint();
 };
 
 
@@ -57,8 +58,12 @@ struct CarStateCartesian{
     CarStateCartesian(const CarStateCartesian &x);
 };
 
+CartesianPoint rotation_translation(const CartesianPoint & point, const CartesianPoint& ref, const AngleInRadians& ref_angle);
+CartesianPoint inverse_rotation_translation(const CartesianPoint & point, const CartesianPoint & ref, const AngleInRadians & ref_angle);
 FrenetPoint getFrenet(CartesianPoint p, AngleInRadians theta, const std::vector<double> &maps_x, const std::vector<double> &maps_y);
 CartesianPoint getXY(FrenetPoint p,const std::vector<double> &maps_s, const std::vector<double> &maps_x, const std::vector<double> &maps_y);
 CarStateCartesian moveForward(CarStateCartesian start_state, double time_in_sec);
-std::vector<CartesianPoint> calcReferencePath(std::vector<double> , std::vector<double> , CarStateCartesian  , CarStateFrenet, Lane, const std::vector<double> &, const std::vector<double> &,const std::vector<double> &);
+std::vector<CartesianPoint> calcPathSpline(const std::vector<double>&, const std::vector<double>&, CarStateCartesian, FrenetPoint,
+                                           const Lane, const double,const std::vector<double> &, const std::vector<double> &,
+                                           const std::vector<double> &);
 #endif //PATH_PLANNING_HELPER_H

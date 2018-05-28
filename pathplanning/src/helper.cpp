@@ -5,6 +5,7 @@
 #include <algorithm>
 #include "helper.h"
 #include <math.h>
+#include <iostream>
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
 #include "spline.h"
@@ -164,8 +165,8 @@ double cosrad(AngleInRadians a){
 }
 
 FrenetPoint::FrenetPoint(double _s, double _d) {
-    this->s = s;
-    this->d = d;
+    this->s = _s;
+    this->d = _d;
 }
 
 CartesianPoint::CartesianPoint(double _x, double _y) {
@@ -177,8 +178,7 @@ CarStateCartesian::CarStateCartesian(double x, double y, AngleInRadians theta, d
     car_speed_in_mps = speed;
 }
 
-CarStateCartesian::CarStateCartesian(const CarStateCartesian &x):car_angle {x.car_angle},{
-    car_position = x.car_position;
+CarStateCartesian::CarStateCartesian(const CarStateCartesian &x):car_angle {x.car_angle},car_position{x.car_position}{
     car_speed_in_mps = x.car_speed_in_mps;
 }
 
@@ -192,7 +192,6 @@ CartesianPoint getXY(FrenetPoint p, const std::vector<double> &maps_s, const std
     return CartesianPoint(temp[0],temp[1]);
 }
 
-CarStateFrenet::CarStateFrenet(double _s, double _d):s{_s},d{_d}{}
 
 CarStateCartesian moveForward(CarStateCartesian start_state, double time_in_sec){
     CarStateCartesian result(start_state);
@@ -215,34 +214,56 @@ AngleInRadians operator-(AngleInRadians x, AngleInRadians y){
     return  AngleInRadians(x.angle-y.angle);
 }
 
-CartesianPoint rotation_translation(const CartesianPoint & point, const CartesianPoint& ref, const AngleInRadians& ref_angle){
+CartesianPoint::CartesianPoint() {
+    x=0.0;
+    y=0.0;
+}
+CartesianPoint rotation_translation(const CartesianPoint &point, const CartesianPoint &ref, const AngleInRadians &ref_angle) {
     CartesianPoint result(point);
     double shift_x = point.x - ref.x;
-    double shift_y = point.y- ref.x;
+    double shift_y = point.y- ref.y;
     result.x = shift_x*cosrad(AngleInRadians(0.0)-ref_angle) - shift_y*sinrad(AngleInRadians(0.0)-ref_angle);
-    result.y = shift_x*sinrad(AngleInRadians(0.0)-ref_angle) - shift_y*cosrad(AngleInRadians(0.0)-ref_angle);
+    result.y = shift_x*sinrad(AngleInRadians(0.0)-ref_angle) + shift_y*cosrad(AngleInRadians(0.0)-ref_angle);
     return result;
 }
 
-std::vector<CartesianPoint> calcReferencePath(std::vector<double> previous_path_x, std::vector<double> previous_path_y,
-                                              CarStateCartesian car_state, FrenetPoint frenet_state,Lane desired_lane,
-                                              const std::vector<double> &maps_s, const std::vector<double> &maps_x,
-                                              const std::vector<double> &maps_y){
+CartesianPoint inverse_rotation_translation(const CartesianPoint & point, const CartesianPoint & ref, const AngleInRadians & ref_angle){
+    CartesianPoint result(point);
+    result.x = ref.x + point.x*cosrad(ref_angle) - point.y*sinrad(ref_angle);
+    result.y = ref.y + point.x*sinrad(ref_angle) + point.y*cosrad(ref_angle);
+    return result;
+}
+std::vector<CartesianPoint> calcPathSpline(const std::vector<double>& previous_path_x, const std::vector<double>& previous_path_y,
+                                           CarStateCartesian car_state, FrenetPoint frenet_state, const Lane desired_lane,const double target_speed,
+                                           const std::vector<double> &maps_s, const std::vector<double> &maps_x,
+                                           const std::vector<double> &maps_y){
+    const unsigned int desired_points = 50;
     std::vector<CartesianPoint> spline_init_points;
     CartesianPoint ref=car_state.car_position;
     AngleInRadians ref_yaw = car_state.car_angle;
-    unsigned long n = previous_path_x.size();
+    double ref_speed = 0.0;
+    const double max_acceleration = 10;
+    const unsigned int n = previous_path_x.size();
     if (previous_path_x.size() >= 2) {
-        ref = CartesianPoint(previous_path_x[n-1],previous_path_y[n-1])
+        ref = CartesianPoint(previous_path_x[n-1],previous_path_y[n-1]);
         spline_init_points.push_back(ref);
         spline_init_points.emplace_back(CartesianPoint(previous_path_x[n-2],previous_path_y[n-2]));
         ref_yaw = AngleInRadians(atan2(previous_path_y[n-1]-previous_path_y[n-2],previous_path_x[n-1]-previous_path_x[n-2]));
-    } else {
+        ref_speed = fabs(distance(previous_path_x[n-1],previous_path_y[n-1],previous_path_x[n-2],previous_path_y[n-2])/0.02);
+        ref_speed = std::max(ref_speed-max_acceleration*0.02,std::min(target_speed,ref_speed+ max_acceleration*0.02));
+        } else {
         spline_init_points.push_back(car_state.car_position);
-        spline_init_points.push_back(moveForward(car_state, -0.02).car_position);
+        if(car_state.car_speed_in_mps>0){
+            spline_init_points.push_back(moveForward(car_state, -0.02).car_position);
+        }else{
+            CarStateCartesian new_state(car_state);
+            new_state.car_speed_in_mps = 0.2;
+            spline_init_points.push_back(moveForward(new_state,-0.02).car_position);
+        }
+        ref_speed = std::max(car_state.car_speed_in_mps-max_acceleration*0.02,std::min(car_state.car_speed_in_mps+max_acceleration*0.02,target_speed));
     }
     std::vector<CartesianPoint> next_wp(3);
-    double FORWARD_TIME=1.2;
+    const double FORWARD_TIME=1.2;
     double forward_s=std::max(30.0,FORWARD_TIME*car_state.car_speed_in_mps);
     double desired_d = lane2d(desired_lane);
     for(unsigned long i=0;i<3;i++){
@@ -256,5 +277,28 @@ std::vector<CartesianPoint> calcReferencePath(std::vector<double> previous_path_
     std::transform(spline_init_points.begin(),spline_init_points.end(),std::back_inserter(wp_x),[](CartesianPoint x){return x.x;});
     std::transform(spline_init_points.begin(),spline_init_points.end(),std::back_inserter(wp_y),[](CartesianPoint x){return x.y;});
     s.set_points(wp_x,wp_y);
+
+    //get points on spline that do not violate speed constraints
+    //it's ok to do this in transformed domain because the transformation doesn't scale, only translate and rotate
+    std::vector<CartesianPoint> result(desired_points);
+    for(unsigned int i=0;i<n;i++){
+        result[i] = CartesianPoint(previous_path_x[i],previous_path_y[i]);
+    }
+    double target_x = std::max(30.0,FORWARD_TIME*car_state.car_speed_in_mps);
+    double target_y = s(target_x);
+    double distance_to_end = distance(0.0,0.0,target_x,target_y);
+    int num_points = desired_points - n;
+    if(num_points<=0){
+        std::cout<< "something is not right"<<std::endl;
+    }
+    int spline_total_points = (unsigned  int) ceil(distance_to_end*50.0/ref_speed);
+    double spline_x,spline_y;
+    for(unsigned int i=0;i <num_points;i++){
+        spline_x=(i+1)*distance_to_end/spline_total_points;
+        spline_y=s(spline_x);
+        CartesianPoint p(spline_x,spline_y);
+        result[n+i] = inverse_rotation_translation(p,ref,ref_yaw);
+    }
+return result;
 
 }
