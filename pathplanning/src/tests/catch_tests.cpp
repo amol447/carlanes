@@ -32,5 +32,10 @@ TEST_CASE("rotation_translation_test"){
 }
 
 TEST_CASE("moveForwardTest"){
-REQUIRE(true);
+    CarStateCartesian start(2.0,3.0,AngleInRadians(deg2rad(60.0)),2.0);
+    auto new_state = moveForward(start,0.1);
+
+    REQUIRE(fabs(new_state.car_position.x-2.1)<0.0001);
+    REQUIRE(fabs(new_state.car_position.y-(3+sqrt(3.0)/2)<0.0001));
 }
+

@@ -242,7 +242,7 @@ std::vector<CartesianPoint> calcPathSpline(const std::vector<double>& previous_p
     CartesianPoint ref=car_state.car_position;
     AngleInRadians ref_yaw = car_state.car_angle;
     double ref_speed = 0.0;
-    const double max_acceleration = 10;
+    const double max_acceleration = 10.0;
     const unsigned int n = previous_path_x.size();
     if (previous_path_x.size() >= 2) {
         ref = CartesianPoint(previous_path_x[n-1],previous_path_y[n-1]);
@@ -250,7 +250,7 @@ std::vector<CartesianPoint> calcPathSpline(const std::vector<double>& previous_p
         spline_init_points.emplace_back(CartesianPoint(previous_path_x[n-2],previous_path_y[n-2]));
         ref_yaw = AngleInRadians(atan2(previous_path_y[n-1]-previous_path_y[n-2],previous_path_x[n-1]-previous_path_x[n-2]));
         ref_speed = fabs(distance(previous_path_x[n-1],previous_path_y[n-1],previous_path_x[n-2],previous_path_y[n-2])/0.02);
-        ref_speed = std::max(ref_speed-max_acceleration*0.02,std::min(target_speed,ref_speed+ max_acceleration*0.02));
+        ref_speed = std::max(ref_speed-max_acceleration*0.05,std::min(target_speed,ref_speed+ max_acceleration*0.05));
         } else {
         spline_init_points.push_back(car_state.car_position);
         if(car_state.car_speed_in_mps>0){
@@ -260,7 +260,7 @@ std::vector<CartesianPoint> calcPathSpline(const std::vector<double>& previous_p
             new_state.car_speed_in_mps = 0.2;
             spline_init_points.push_back(moveForward(new_state,-0.02).car_position);
         }
-        ref_speed = std::max(car_state.car_speed_in_mps-max_acceleration*0.02,std::min(car_state.car_speed_in_mps+max_acceleration*0.02,target_speed));
+        ref_speed = std::max(car_state.car_speed_in_mps-max_acceleration*0.05,std::min(car_state.car_speed_in_mps+max_acceleration*0.05,target_speed));
     }
     std::vector<CartesianPoint> next_wp(3);
     const double FORWARD_TIME=1.2;
@@ -287,14 +287,16 @@ std::vector<CartesianPoint> calcPathSpline(const std::vector<double>& previous_p
     double target_x = std::max(30.0,FORWARD_TIME*car_state.car_speed_in_mps);
     double target_y = s(target_x);
     double distance_to_end = distance(0.0,0.0,target_x,target_y);
+    AngleInRadians angle_of_triangle = AngleInRadians(atan2(target_y,target_x));
     int num_points = desired_points - n;
     if(num_points<=0){
         std::cout<< "something is not right"<<std::endl;
     }
+    std::cout<<"ref_speed="<<ref_speed<<std::endl;
     int spline_total_points = (unsigned  int) ceil(distance_to_end*50.0/ref_speed);
     double spline_x,spline_y;
     for(unsigned int i=0;i <num_points;i++){
-        spline_x=(i+1)*distance_to_end/spline_total_points;
+        spline_x=(i+1)*cosrad(angle_of_triangle)*distance_to_end/spline_total_points;
         spline_y=s(spline_x);
         CartesianPoint p(spline_x,spline_y);
         result[n+i] = inverse_rotation_translation(p,ref,ref_yaw);
@@ -302,3 +304,4 @@ std::vector<CartesianPoint> calcPathSpline(const std::vector<double>& previous_p
 return result;
 
 }
+

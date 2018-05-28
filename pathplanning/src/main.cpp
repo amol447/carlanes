@@ -122,7 +122,7 @@ int main() {
             double target_vel=49.5/2.24;
 
           	// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
-            Lane lane = LEFT;
+            Lane lane = CENTRE;
             auto points = calcPathSpline(previous_path_x,previous_path_y,car_state,frenet_state,lane,target_vel,map_waypoints_s,map_waypoints_x,map_waypoints_y);
             std::transform(points.begin(),points.end(),std::back_inserter(next_x_vals),[](CartesianPoint x){return x.x;});
             std::transform(points.begin(),points.end(),std::back_inserter(next_y_vals),[](CartesianPoint x){return x.y;});
