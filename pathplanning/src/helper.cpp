@@ -370,3 +370,8 @@ return result;
 
 }
 
+bool collisionDetection(const std::vector<CartesianPoint> & trajectory, const std::vector<std::vector<double>> & other_cars){
+    for(unsigned int i=0;i<other_cars.size();i++){
+
+    }
+}
