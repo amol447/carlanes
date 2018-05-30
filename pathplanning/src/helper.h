@@ -18,6 +18,7 @@ std::vector<double> getXY(double s, double d, const std::vector<double> &maps_s,
 enum Lane {
         LEFT, CENTRE, RIGHT
     };
+Lane d2Lane(double );
 struct AngleInRadians;
 struct AngleInDegrees{
     double angle;

@@ -144,6 +144,11 @@ double lane2d(Lane l){
     return 2+l*4;
 }
 
+Lane d2Lane(double d){
+    if(d<=4) return LEFT;
+    else if (d<=8) return CENTRE;
+    else return RIGHT;
+}
 AngleInDegrees::AngleInDegrees(const AngleInRadians &x) {
     angle=rad2deg(x.angle);
 }
