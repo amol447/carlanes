@@ -72,4 +72,5 @@ std::vector<CartesianPoint> calcFullPathSpline(const std::vector<double>&, const
                                            const std::vector<double> &);
 
 bool collisionDetection(const std::vector<CartesianPoint>& trajectory,const std::vector<std::vector<double>> & other_cars);
+double distance(CartesianPoint const & ,CartesianPoint const &);
 #endif //PATH_PLANNING_HELPER_H

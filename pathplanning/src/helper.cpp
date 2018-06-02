@@ -16,6 +16,11 @@ double distance(double x1, double y1, double x2, double y2)
 {
     return sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
 }
+
+double distance(CartesianPoint const &a, CartesianPoint const &b){
+    return distance(a.x,a.y,b.x,b.y);
+}
+
 int ClosestWaypoint(double x, double y, const std::vector<double> &maps_x, const std::vector<double> &maps_y)
 {
 

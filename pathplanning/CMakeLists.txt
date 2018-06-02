@@ -9,6 +9,8 @@ set(CMAKE_CXX_FLAGS, "${CXX_FLAGS}")
 set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 add_library(Catch INTERFACE)
 target_include_directories(Catch INTERFACE ${CATCH_INCLUDE_DIR})
+add_library(TinyFSM INTERFACE)
+target_include_directories(TinyFSM INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 set(sources src/main.cpp src/helper.h src/spline.h src/helper.cpp src/tinyfsm.hpp src/car_behaviour_fsm.cpp src/car_behaviour_fsm.hpp)
 set(TEST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/catch_tests src/spline.h src/helper.cpp src/tinyfsm.hpp src/car_behaviour_fsm.cpp src/car_behaviour_fsm.hpp)
 
