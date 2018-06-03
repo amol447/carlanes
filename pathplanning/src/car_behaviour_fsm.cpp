@@ -28,7 +28,7 @@ bool  safeToChangeLane(NextFrame const & nextFrame,Lane desired_lane){
     double curr_speed = nextFrame.car_speed_mps;
     double curr_s = nextFrame.curr_s;
     std::copy_if(cars_in_desired_lane.begin(),cars_in_desired_lane.end(),std::back_inserter(cars_behind_in_desired_lane_faster),
-                 [&curr_speed,&curr_s](std::vector<double> car){ return ( (car[S_POS]<curr_s+20) && (calcOtherCarSpeed(car)>curr_speed));});
+                 [&curr_speed,&curr_s](std::vector<double> car){ return within(car[S_POS],curr_s-60,curr_s+20) && calcOtherCarSpeed(car)>curr_speed-3 ;});
     return cars_behind_in_desired_lane_faster.empty();
 }
 void PrepareLaneChangeLeft::react(NextFrame const & nextFrame) {
@@ -41,10 +41,21 @@ void PrepareLaneChangeLeft::react(NextFrame const & nextFrame) {
     if(safeToChangeLane(nextFrame,desired_lane)){
         desired_d = lane2d(desired_lane);
         auto cars_in_desired_lane = find_cars_in_desired_lane(nextFrame,desired_lane);
-        target_speed_mps = find_min_front_speed(cars_in_desired_lane,nextFrame)-1.0;
+        double MAX_SPEED=initial_v;
+        target_speed_mps = std::min(find_min_front_speed(cars_in_desired_lane,nextFrame)-1.0,MAX_SPEED);
         transit<LaneChangeLeft>();
         return;
-    }
+    }else{
+        carInLaneInfo temp = isOtherCarInLaneSlower(nextFrame,initial_v);
+        if(temp.present) {
+            auto car_info = nextFrame.other_cars[temp.pos];
+            double car_infront_speed = calcOtherCarSpeed(car_info);
+            //target_speed_mps = std::max(nextFrame.car_speed_mps-0.4,car_infront_speed -1.0);
+            target_speed_mps = car_infront_speed-1.0;
+
+
+            }
+        }
 }
 
 void LaneChangeLeft::react(NextFrame const & nextFrame)  {
@@ -65,9 +76,18 @@ void PrepareLaneChangeRight::react(NextFrame const & nextFrame) {
     if(safeToChangeLane(nextFrame,desired_lane)){
         desired_d = lane2d(desired_lane);
         auto cars_in_desired_lane = find_cars_in_desired_lane(nextFrame,desired_lane);
-        target_speed_mps = find_min_front_speed(cars_in_desired_lane,nextFrame)-1.0;
+        double MAX_SPEED=initial_v;
+        target_speed_mps = std::min(find_min_front_speed(cars_in_desired_lane,nextFrame)-1.0,MAX_SPEED);
         transit<LaneChangeRight>();
         return;
+    } else{
+        carInLaneInfo temp = isOtherCarInLaneSlower(nextFrame,initial_v);
+        if(temp.present) {
+        auto car_info = nextFrame.other_cars[temp.pos];
+        double car_infront_speed = calcOtherCarSpeed(car_info);
+        //target_speed_mps = std::max(nextFrame.car_speed_mps-0.4,car_infront_speed -1.0);
+         target_speed_mps = car_infront_speed-1.0;
+        }
     }
 }
 double find_min_front_speed(std::vector<std::vector<double>> other_car_info, NextFrame const &nextFrame){
@@ -142,7 +162,7 @@ carInLaneInfo::carInLaneInfo() {
 carInLaneInfo isOtherCarInLaneSlower(NextFrame const &nextFrame, double const MAX_SPEED){
     double min_s=100000.0;
     carInLaneInfo result=carInLaneInfo();
-    double const SAFE_DISTANCE=100;
+    double const SAFE_DISTANCE=60;
     for(unsigned int i=0;i<nextFrame.other_cars.size();i++){
         if(d2Lane(nextFrame.other_cars[i][D_POS]) == d2Lane(nextFrame.curr_d)){
            if(  within(nextFrame.other_cars[i][S_POS]-nextFrame.curr_s,0.0,SAFE_DISTANCE) && (calcOtherCarSpeed(nextFrame.other_cars[i])< MAX_SPEED)){

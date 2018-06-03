@@ -110,6 +110,7 @@ enum otherCarInfo{
     ID_POS=0,X_POS=1,Y_POS=2,X_SPEED_POS=3,Y_SPEED_POS=4,S_POS=5,D_POS=6
 };
 
+bool within(const double x,const double left, const double right);
 double find_min_front_speed(std::vector<std::vector<double>> other_car_info, NextFrame const &nextFrame);
 bool  safeToChangeLane(NextFrame const & nextFrame,Lane desired_lane);
 std::vector<std::vector<double>> find_cars_in_desired_lane(NextFrame const & nextFrame,Lane l);
