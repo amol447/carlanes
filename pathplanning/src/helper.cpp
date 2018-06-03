@@ -274,7 +274,7 @@ std::vector<CartesianPoint> calcPathSpline(const std::vector<double>& previous_p
     }
     std::vector<CartesianPoint> next_wp(3);
     const double FORWARD_TIME=1.2;
-    double forward_s=std::max(30.0,FORWARD_TIME*car_state.car_speed_in_mps);
+    double forward_s=std::max(50.0,FORWARD_TIME*car_state.car_speed_in_mps);
     double desired_d = lane2d(desired_lane);
     for(unsigned long i=0;i<3;i++){
     next_wp[i] = getXY(add_to_s_set_d(frenet_state,forward_s*(i+1),desired_d),maps_s,maps_x, maps_y);
@@ -294,7 +294,7 @@ std::vector<CartesianPoint> calcPathSpline(const std::vector<double>& previous_p
     for(unsigned int i=0;i<n;i++){
         result[i] = CartesianPoint(previous_path_x[i],previous_path_y[i]);
     }
-    double target_x = std::max(30.0,FORWARD_TIME*car_state.car_speed_in_mps);
+    double target_x = std::max(50.0,FORWARD_TIME*car_state.car_speed_in_mps);
     double target_y = s(target_x);
     double distance_to_end = distance(0.0,0.0,target_x,target_y);
     AngleInRadians angle_of_triangle = AngleInRadians(atan2(target_y,target_x));
@@ -302,7 +302,7 @@ std::vector<CartesianPoint> calcPathSpline(const std::vector<double>& previous_p
     if(num_points<=0){
         std::cout<< "something is not right"<<std::endl;
     }
-    std::cout<<"ref_speed="<<ref_speed<<std::endl;
+    //std::cout<<"ref_speed="<<ref_speed<<std::endl;
     int spline_total_points = (unsigned  int) ceil(distance_to_end*50.0/ref_speed);
     double spline_x,spline_y;
     for(unsigned int i=0;i <num_points;i++){

@@ -45,7 +45,7 @@ struct NextFrame:tinyfsm::Event{
     double car_y;
     AngleInRadians car_yaw;
     std::vector<double> previous_path_x,previous_path_y;
-    NextFrame(CarStateCartesian,FrenetPoint,std::vector<std::vector<double>>&,std::vector<double>,std::vector<double>);
+    NextFrame(CarStateCartesian,FrenetPoint,std::vector<std::vector<double>>const &,std::vector<double>const &,std::vector<double> const &);
 };
 struct CarBehaviour:public tinyfsm::Fsm<CarBehaviour>{
 void react(tinyfsm::Event const &){};

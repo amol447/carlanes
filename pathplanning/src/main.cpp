@@ -35,8 +35,11 @@ string hasData(string s) {
 
 
 
-
-
+using fsm=CarBehaviour;
+/*template<typename E>
+void send_event(E const &event){
+    fsm::dispatch<E>(event);
+}*/
 
 int main() {
   uWS::Hub h;
@@ -75,6 +78,7 @@ int main() {
   	map_waypoints_dy.push_back(d_y);
   }
 
+    fsm::start();
   h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
@@ -125,8 +129,11 @@ int main() {
           	// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
             Lane lane = CENTRE;
             NextFrame nextFrame(car_state,frenet_state,sensor_fusion,previous_path_x,previous_path_y);
-
-            auto points = calcPathSpline(previous_path_x,previous_path_y,car_state,frenet_state,lane,target_vel,map_waypoints_s,map_waypoints_x,map_waypoints_y);
+            fsm::dispatch(nextFrame);
+            auto desired_d = fsm::desired_d;
+            auto desired_speed = fsm::target_speed_mps;
+            std::cout<<"desired speed="<<desired_speed<<std::endl;
+            auto points = calcPathSpline(previous_path_x,previous_path_y,car_state,frenet_state,d2Lane(desired_d),desired_speed,map_waypoints_s,map_waypoints_x,map_waypoints_y);
             std::transform(points.begin(),points.end(),std::back_inserter(next_x_vals),[](CartesianPoint x){return x.x;});
             std::transform(points.begin(),points.end(),std::back_inserter(next_y_vals),[](CartesianPoint x){return x.y;});
           	msgJson["next_x"] = next_x_vals;

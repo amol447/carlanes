@@ -3,8 +3,9 @@
 //
 
 #include "car_behaviour_fsm.hpp"
-NextFrame::NextFrame(CarStateCartesian cs, FrenetPoint fs, std::vector<std::vector<double>> & oc, std::vector<double>ppx,
-                     std::vector<double>ppy):curr_d{fs.d},curr_s{ fs.s },car_yaw{ cs.car_angle },
+#include <iostream>
+NextFrame::NextFrame(CarStateCartesian cs, FrenetPoint fs, std::vector<std::vector<double>> const & oc, std::vector<double>const &ppx,
+                     std::vector<double>const &ppy):curr_d{fs.d},curr_s{ fs.s },car_yaw{ cs.car_angle },
                                              car_x{cs.car_position.x},car_y{cs.car_position.y},
                                              previous_path_x{ppx},previous_path_y{ppy},other_cars{oc},car_speed_mps{cs.car_speed_in_mps} {
 
@@ -27,7 +28,7 @@ bool  safeToChangeLane(NextFrame const & nextFrame,Lane desired_lane){
     double curr_speed = nextFrame.car_speed_mps;
     double curr_s = nextFrame.curr_s;
     std::copy_if(cars_in_desired_lane.begin(),cars_in_desired_lane.end(),std::back_inserter(cars_behind_in_desired_lane_faster),
-                 [&curr_speed,&curr_s](std::vector<double> car){ return ( (car[S_POS]<curr_s) && (calcOtherCarSpeed(car)>curr_speed));});
+                 [&curr_speed,&curr_s](std::vector<double> car){ return ( (car[S_POS]<curr_s+20) && (calcOtherCarSpeed(car)>curr_speed));});
     return cars_behind_in_desired_lane_faster.empty();
 }
 void PrepareLaneChangeLeft::react(NextFrame const & nextFrame) {
@@ -36,17 +37,20 @@ void PrepareLaneChangeLeft::react(NextFrame const & nextFrame) {
     if(curr_lane!=LEFT){
         desired_lane = (Lane) (int(curr_lane)-1 );
     }
+    std::cout<<"in prepare lane change left"<<std::endl;
     if(safeToChangeLane(nextFrame,desired_lane)){
         desired_d = lane2d(desired_lane);
         auto cars_in_desired_lane = find_cars_in_desired_lane(nextFrame,desired_lane);
         target_speed_mps = find_min_front_speed(cars_in_desired_lane,nextFrame)-1.0;
         transit<LaneChangeLeft>();
+        return;
     }
 }
 
 void LaneChangeLeft::react(NextFrame const & nextFrame)  {
-    if(fabs(nextFrame.curr_d-desired_d)<0.3){
+    if(fabs(nextFrame.curr_d-desired_d)<1.0){
         transit<KeepLane>();
+        return;
     }
 //TODO:generate trajectory with desired_d?
 }
@@ -57,16 +61,18 @@ void PrepareLaneChangeRight::react(NextFrame const & nextFrame) {
     if(curr_lane!=RIGHT){
         desired_lane = (Lane)( int(curr_lane)+1);
     }
+    std::cout<<"in prepare lane change right"<<std::endl;
     if(safeToChangeLane(nextFrame,desired_lane)){
         desired_d = lane2d(desired_lane);
         auto cars_in_desired_lane = find_cars_in_desired_lane(nextFrame,desired_lane);
         target_speed_mps = find_min_front_speed(cars_in_desired_lane,nextFrame)-1.0;
         transit<LaneChangeRight>();
+        return;
     }
 }
 double find_min_front_speed(std::vector<std::vector<double>> other_car_info, NextFrame const &nextFrame){
     std::vector<std::vector<double>> other_cars_infront;
-    std::copy_if(other_car_info.begin(),other_car_info.end(),std::back_inserter(other_cars_infront),[](std::vector<double> car){
+    std::copy_if(other_car_info.begin(),other_car_info.end(),std::back_inserter(other_cars_infront),[&nextFrame](std::vector<double> car){
         return car[S_POS]>nextFrame.curr_s;});
     if(other_cars_infront.empty())
         return 1000.0;
@@ -78,7 +84,9 @@ void KeepLane::react(NextFrame const &nextFrame) {
     desired_d = lane2d(d2Lane(nextFrame.curr_d));
     target_speed_mps = initial_v;
     carInLaneInfo temp = isOtherCarInLaneSlower(nextFrame,initial_v);
+    std::cout<<"in Keep Lane"<<std::endl;
     if(temp.present){
+        std::cout<<"in Keep lane and found other car in lane"<<std::endl;
         std::vector<std::vector<double>> left_lane_cars,right_lane_cars,centre_lane_cars;
         left_lane_cars = find_cars_in_desired_lane(nextFrame,LEFT);
         right_lane_cars = find_cars_in_desired_lane(nextFrame,RIGHT);
@@ -89,7 +97,7 @@ void KeepLane::react(NextFrame const &nextFrame) {
         centre_min_speed = find_min_front_speed(centre_lane_cars,nextFrame);
         auto car_info = nextFrame.other_cars[temp.pos];
         double car_infront_speed = calcOtherCarSpeed(car_info);
-        target_speed_mps = car_infront_speed -1.0;
+        target_speed_mps = std::max(nextFrame.car_speed_mps-0.2,car_infront_speed -1.0);
         Lane curr_lane=d2Lane(nextFrame.curr_d);
         if( (curr_lane==LEFT ) && (centre_min_speed>car_infront_speed) ){
             transit<PrepareLaneChangeRight>();
@@ -115,8 +123,9 @@ void KeepLane::react(NextFrame const &nextFrame) {
 }
 
 void LaneChangeRight::react(NextFrame const & nextFrame) {
-    if(fabs(nextFrame.curr_d-desired_d)<0.3){
+    if(fabs(nextFrame.curr_d-desired_d)<1.0){
         transit<KeepLane>();
+        return;
 }
 //TODO generate trajectory with desired_d?
 }
@@ -131,7 +140,7 @@ carInLaneInfo::carInLaneInfo() {
 }
 
 carInLaneInfo isOtherCarInLaneSlower(NextFrame const &nextFrame, double const MAX_SPEED){
-    double min_s=1000.0;
+    double min_s=100000.0;
     carInLaneInfo result=carInLaneInfo();
     double const SAFE_DISTANCE=100;
     for(unsigned int i=0;i<nextFrame.other_cars.size();i++){
