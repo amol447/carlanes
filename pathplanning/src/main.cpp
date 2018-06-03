@@ -128,7 +128,7 @@ int main() {
 
           	// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
             Lane lane = CENTRE;
-            NextFrame nextFrame(car_state,frenet_state,sensor_fusion,previous_path_x,previous_path_y);
+            NextFrame nextFrame(car_state,frenet_state,sensor_fusion,previous_path_x,previous_path_y,map_waypoints_s,map_waypoints_x,map_waypoints_y);
             fsm::dispatch(nextFrame);
             auto desired_d = fsm::desired_d;
             auto desired_speed = fsm::target_speed_mps;
