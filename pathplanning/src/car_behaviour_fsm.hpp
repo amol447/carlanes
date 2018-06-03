@@ -8,6 +8,8 @@
 #include "tinyfsm.hpp"
 #include "helper.h"
 #include <vector>
+#include <algorithm>
+
 
 
 /*
@@ -103,8 +105,13 @@ struct carInLaneInfo{
     unsigned int pos;
     carInLaneInfo();
 };
-carInLaneInfo isOtherCarInLane(NextFrame const &);
+carInLaneInfo isOtherCarInLaneSlower(NextFrame const &,double);
 enum otherCarInfo{
     ID_POS=0,X_POS=1,Y_POS=2,X_SPEED_POS=3,Y_SPEED_POS=4,S_POS=5,D_POS=6
 };
+
+double find_min_front_speed(std::vector<std::vector<double>> other_car_info, NextFrame const &nextFrame);
+bool  safeToChangeLane(NextFrame const & nextFrame,Lane desired_lane);
+std::vector<std::vector<double>> find_cars_in_desired_lane(NextFrame const & nextFrame,Lane l);
+
 #endif //PATH_PLANNING_CAR_BEHAVIOUR_FSM_HPP

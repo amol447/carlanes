@@ -8,6 +8,7 @@
 #include "Eigen-3.3/Eigen/QR"
 #include "json.hpp"
 #include "helper.h"
+#include "car_behaviour_fsm.hpp"
 using namespace std;
 
 // for convenience
@@ -123,6 +124,8 @@ int main() {
 
           	// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
             Lane lane = CENTRE;
+            NextFrame nextFrame(car_state,frenet_state,sensor_fusion,previous_path_x,previous_path_y);
+
             auto points = calcPathSpline(previous_path_x,previous_path_y,car_state,frenet_state,lane,target_vel,map_waypoints_s,map_waypoints_x,map_waypoints_y);
             std::transform(points.begin(),points.end(),std::back_inserter(next_x_vals),[](CartesianPoint x){return x.x;});
             std::transform(points.begin(),points.end(),std::back_inserter(next_y_vals),[](CartesianPoint x){return x.y;});
