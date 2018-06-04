@@ -252,7 +252,7 @@ std::vector<CartesianPoint> calcPathSpline(const std::vector<double>& previous_p
     CartesianPoint ref=car_state.car_position;
     AngleInRadians ref_yaw = car_state.car_angle;
     double ref_speed = 0.0;
-    const double max_acceleration = 10.0;
+    const double max_acceleration = 7.0;
     const unsigned int n = previous_path_x.size();
     if (previous_path_x.size() >= 2) {
         ref = CartesianPoint(previous_path_x[n-1],previous_path_y[n-1]);

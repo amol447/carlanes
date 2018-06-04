@@ -133,6 +133,7 @@ int main() {
             auto desired_d = fsm::desired_d;
             auto desired_speed = fsm::target_speed_mps;
             std::cout<<"desired speed="<<desired_speed<<std::endl;
+            //std::cout<<"previous path size="<<previous_path_x.size()<<std::endl;
             auto points = calcPathSpline(previous_path_x,previous_path_y,car_state,frenet_state,d2Lane(desired_d),desired_speed,map_waypoints_s,map_waypoints_x,map_waypoints_y);
             std::transform(points.begin(),points.end(),std::back_inserter(next_x_vals),[](CartesianPoint x){return x.x;});
             std::transform(points.begin(),points.end(),std::back_inserter(next_y_vals),[](CartesianPoint x){return x.y;});
