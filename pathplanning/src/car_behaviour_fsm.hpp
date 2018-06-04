@@ -55,49 +55,52 @@ void react(tinyfsm::Event const &){};
 //virtual void react(CarsInDesiredLane const &);
 virtual void react(NextFrame const &);
 virtual void entry(void);
-void exit(void);
+virtual void exit(void);
 static double constexpr initial_d = 6;
 static double constexpr initial_v = 49.0/2.24;
+static int constexpr initial_num_times_in_prepare=0;
 //static double curr_d;
 static double desired_d;
 static double target_speed_mps;
+static int num_times_in_prepare;
 std::vector<std::vector<double>> other_cars;
 };
 
 
 struct KeepLane;
 struct PrepareLaneChangeLeft:public CarBehaviour{
-void entry() override{
-}
+void entry() override;
 void react(NextFrame const &) override;
+void exit() override;
 };
 
 struct LaneChangeLeft:public CarBehaviour{
     void entry() override{
         //generate trajectory with desired_d
     }
-
+    void exit() override{};
     void react(NextFrame const &) override;
 };
 
 struct PrepareLaneChangeRight:public CarBehaviour{
-    void entry() override{
-
-    }
+    void entry() override;
 
     void react(NextFrame const &) override;
+    void exit()override ;
 };
 struct LaneChangeRight:public CarBehaviour{
     void entry()override{
         //TODO:generate trajectory with desired_d
     }
     void react(NextFrame const &) override;
+    void exit() override{};
 };
 struct KeepLane:public CarBehaviour{
     void entry()override {
 
     }
     void react(NextFrame const &) override;
+    void exit()override{};
 };
 struct carInLaneInfo{
     bool present;
