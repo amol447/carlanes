@@ -91,10 +91,10 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     # TODO: Implement function
     logits = tf.reshape(nn_last_layer, (-1, num_classes))
     correct_label_1 = tf.reshape(correct_label, (-1, num_classes))
-    cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=correct_label_1))
-    entropy_and_reg_loss = cross_entropy_loss + tf.losses.get_regularization_loss()
+    cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=correct_label_1)
+                                        + tf.losses.get_regularization_loss())
     train_op = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cross_entropy_loss)
-    return logits, train_op, entropy_and_reg_loss
+    return logits, train_op, cross_entropy_loss
 
 
 tests.test_optimize(optimize)
@@ -163,7 +163,7 @@ def run():
         logits, train_op, cross_entropy_loss = optimize(last_layer, correct_label, learning_rate, num_classes)
         # TODO: Train NN using the train_nn function
         sess.run(tf.global_variables_initializer())
-        train_nn(sess, 20, 16, get_batches_fn, train_op, cross_entropy_loss, image_input, correct_label, keep_prob,
+        train_nn(sess, 30, 16, get_batches_fn, train_op, cross_entropy_loss, image_input, correct_label, keep_prob,
                  learning_rate)
         # TODO: Save inference data using helper.save_inference_samples
         #  helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image)
