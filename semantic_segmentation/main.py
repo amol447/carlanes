@@ -57,15 +57,19 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     # TODO: Implement function
     vgg_layer3 = tf.multiply(vgg_layer3_out, 0.0001, name='pool3_out')
     vgg_layer4 = tf.multiply(vgg_layer4_out, 0.01, name='pool4_out')
-    out_7 = tf.layers.conv2d_transpose(vgg_layer7_out, num_classes, 4, 2, padding='same',
+    #vgg_layer7_c = tf.layers.conv2d(vgg_layer7_out, num_classes, 1, padding='same',
+     #                               kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    #out_7 = tf.layers.conv2d_transpose(vgg_layer7_out, num_classes, 4, 2, padding='same',
+    #                                   kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    out_4 = tf.layers.conv2d_transpose(vgg_layer7_out, num_classes, 4, 2, padding='same',
                                        kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
-    out_4 = tf.layers.conv2d_transpose(out_7, num_classes, 4, 2, padding='same',
-                                       kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
-    vgg_layer4_c = tf.layers.conv2d(vgg_layer4, num_classes, 1, 1, padding='same')
+    vgg_layer4_c = tf.layers.conv2d(vgg_layer4, num_classes, 1, padding='same',
+                                    kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
     out_4_mix = tf.add(out_4, vgg_layer4_c)
     out_3 = tf.layers.conv2d_transpose(out_4_mix, num_classes, 4, 2, padding='same',
                                        kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
-    vgg_layer3_c = tf.layers.conv2d(vgg_layer3, num_classes, 1, 1, padding='same')
+    vgg_layer3_c = tf.layers.conv2d(vgg_layer3, num_classes, 1,  padding='same',
+                                    kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
     out_3_mix = tf.add(out_3, vgg_layer3_c)
     out = tf.layers.conv2d_transpose(out_3_mix, num_classes, 16, 8, padding='same',
                                      kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
@@ -112,7 +116,7 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     """
     # TODO: Implement function
     keep_prob_v = 0.5
-    learning_rate_v = 0.001
+    learning_rate_v = 0.0001
     loss = 0
     for epoch in range(epochs):
         for image_list, label_list in get_batches_fn(batch_size):
@@ -157,7 +161,9 @@ def run():
         last_layer = layers(layer3_out, layer4_out, layer7_out, num_classes)
         logits, train_op, cross_entropy_loss = optimize(last_layer, correct_label, learning_rate, num_classes)
         # TODO: Train NN using the train_nn function
-        train_nn(sess, 10, 32, get_batches_fn, train_op, cross_entropy_loss, image_input, correct_label, keep_prob,
+        sess.run(tf.global_variables_initializer())
+        #sess.run(tf.local_variables_initializer())
+        train_nn(sess, 20, 20, get_batches_fn, train_op, cross_entropy_loss, image_input, correct_label, keep_prob,
                  learning_rate)
         # TODO: Save inference data using helper.save_inference_samples
         #  helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image)
